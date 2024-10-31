@@ -1,0 +1,1 @@
+# A dynamic web application where local artists can showcase their music, participate in live audio battles, and interact with their audience. This platform empowers artists to upload tracks, battle against other artists live, and receive feedback through audience comments and voting. 
