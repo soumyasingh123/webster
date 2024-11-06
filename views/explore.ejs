@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <style>
-    * {
+      * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -14,9 +14,8 @@
     }
 
     body {
-      background-color: white;
-      background-size: cover;
-      background-position: center;
+      background-color: #FFF0D1;
+      font-family: 'Poppins', sans-serif;
     }
 
     header {
@@ -28,12 +27,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background-color: transparent;
       z-index: 99;
     }
 
     .logo {
       font-size: 2rem;
-      color: #fff;
+      color: #3B3030;
       user-select: none;
     }
 
@@ -41,24 +41,25 @@
       width: 130px;
       height: 50px;
       background: transparent;
-      border: 2px solid #fff;
+      border: 2px solid #3B3030;
       outline: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 1.1rem;
-      color: #fff;
+      color: #3B3030;
       font-weight: 500;
-      margin-right: 40px;
+      margin-right: 20px;
       transition: .5s;
     }
 
     .btnLogin-popup:hover {
-      background: #0c2d48;
-      color: white;
+      background: #3B3030;
+      color: #FFF0D1;
     }
 
-    h2 {
+    .uploadfile {
       margin-top: 40px;
+      margin-bottom: 40px;
       text-align: center;
       font-size: 3rem;
       font-style: italic;
@@ -68,33 +69,32 @@
       width: 100%;
       max-width: 1200px;
       margin: 0 auto;
-      height: 100vh;
       display: flex;
-      flex-direction: row;
       flex-wrap: wrap;
-      align-items: center;
       justify-content: center;
-      gap: 40px;
+      align-items: center;
+      gap: 40px; 
     }
 
     .album li {
       display: flex;
-      justify-content: center;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
-      width: 300px;
-      height: 400px;
+      justify-content: center;
+      gap: 30px;
+      width: 320px; 
+      height: 380px;
       border-radius: 2rem;
       background-color: transparent;
-      border-color: black;
-      border-width: 8px;
+      border-color: #3B3030;
+      border: 2px solid #3B3030;
       box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+      padding: 20px;
     }
 
-    .albumcover img {
+    img {
       border-radius: 2rem;
-      width: 60%;
+      width: 70%;
       height: auto;
       object-fit: contain;
       display: block;
@@ -138,7 +138,7 @@
   </header>
 </body>
 
-<h2>All Uploaded Files</h2>
+<h2 class="uploadfile">All Uploaded Files</h2>
 <% if (allFiles && allFiles.length> 0) { %>
   <div class="album">
     <% allFiles.forEach(file=> { %>
