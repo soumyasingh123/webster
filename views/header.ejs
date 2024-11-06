@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #b1d4e0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        header {
+            position: static;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 99;
+        }
+
+        .logo {
+            font-size: 2rem;
+            color: #fff;
+            user-select: none;
+        }
+
+        .btnLogin-popup {
+            width: 130px;
+            height: 50px;
+            background: transparent;
+            border: 2px solid #fff;
+            outline: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 500;
+            margin-right: 40px;
+            transition: .5s;
+        }
+
+        .btnLogin-popup:hover {
+            background: #0c2d48;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+    <h2 class="logo">MUSIC</h2>
+    <nav>
+        <form action="/profile" method="GET" style="display: inline;">
+            <button class="btnLogin-popup">Profile</button>
+        </form>
+        <form action="/userFiles" method="GET" style="display: inline;">
+            <button class="btnLogin-popup"> Uploads</button>
+        </form>
+        <form action="/explore" method="GET" style="display: inline;">
+            <button class="btnLogin-popup">Explore</button>
+        </form>
+        <form action="/battles" method="GET" style="display: inline;">
+            <button class="btnLogin-popup">battles</button>
+        </form>
+        <form action="/leaderboard" method="GET" style="display: inline;">
+            <button class="btnLogin-popup">Leaderboard</button>
+        </form>
+        <form action="/logout" method="GET" style="display: inline;">
+            <button class="btnLogin-popup">Logout</button>
+        </form>
+      
+    </nav>
+</header>
+</body>

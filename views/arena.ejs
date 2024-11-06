@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battle</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        position: relative;
+        font-family: "Poppins", sans-serif;
+        color: white;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("/battle.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        opacity: 0.3;
+        z-index: -1;
+      }
+
+      header {
+        position: static;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px 100px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 99;
+      }
+
+      .logo {
+        font-size: 2rem;
+        color: #3b3030;
+        user-select: none;
+      }
+
+      .btnLogin-popup {
+        width: 130px;
+        height: 50px;
+        background: transparent;
+        border: 2px solid #3b3030;
+        outline: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        color: #3b3030;
+        font-weight: 500;
+        margin-right: 40px;
+        transition: 0.5s;
+      }
+
+      .btnLogin-popup:hover {
+        background: #3b3030;
+        color: white;
+      }
+
+      .battlearea {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 20px;
+        gap: 80px;
+      }
+
+      .user {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 2rem;
+        color: #3b3030;
+        border: 2px solid #3b3030;
+        width: 350px;
+        height: 510px;
+        text-align: center;
+        background-color: white;
+        padding-top: 50px;
+      }
+
+      .user img {
+        width: 250px;
+        height: 200px;
+        margin: 10px 0;
+      }
+
+      .user form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+      }
+
+      .user form span {
+        font-size: 1rem;
+        color: #3b3030;
+      }
+
+      .user form input[type="file"] {
+        margin-top: 5px;
+        margin-bottom: 3px;
+      }
+
+      .user button {
+        width: 130px;
+        height: 40px;
+        background: transparent;
+        border: 2px solid #3b3030;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        color: #3b3030;
+        font-weight: 500;
+        transition: 0.3s;
+      }
+
+      .user input[type="submit"]:hover,
+      .user button:hover {
+        background: #3b3030;
+        color: white;
+      }
+
+      /* Audio player styles */
+      audio {
+        margin-top: 10px;
+        width: 100%; /* Makes the audio player responsive */
+      }
+
+      .timer {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      .timer h1 {
+        color: #3b3030;
+        font-size: 3rem;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      #countdown {
+        font-size: 3em;
+        font-weight: bold;
+        padding: 20px;
+        border-radius: 10px;
+        width: 200px;
+        text-align: center;
+      }
+
+      .normal {
+        color: #fff0d1;
+        background-color: #3b3030;
+      }
+
+      .warning {
+        color: white;
+        background-color: #eb8080;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        50% {
+          opacity: 1;
+        }
+
+        25%,
+        75% {
+          opacity: 0.5;
+        }
+      }
+
+      @keyframes flash {
+        0%,
+        100% {
+          background-color: #fff;
+        }
+
+        50% {
+          background-color: red;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h2 class="logo">MUSIC</h2>
+      <nav>
+        <form action="/profile" method="GET" style="display: inline">
+          <button class="btnLogin-popup">Profile</button>
+        </form>
+        <form action="/userFiles" method="GET" style="display: inline">
+          <button class="btnLogin-popup">Uploads</button>
+        </form>
+        <form action="/explore" method="GET" style="display: inline">
+          <button class="btnLogin-popup">Explore</button>
+        </form>
+        <form action="/logout" method="GET" style="display: inline">
+          <button class="btnLogin-popup">Logout</button>
+        </form>
+      </nav>
+    </header>
+    <div class="timer">
+      <% if (locals.setClock && setClock == true) { %>
+      <h1>Battle Countdown Timer</h1>
+      <div id="countdown" class="normal">01:00</div>
+      <audio
+        id="alarmSound"
+        src="clock/alarm-clock-90867.mp3"
+        preload="auto"
+      ></audio>
+      <% } %>
+    </div>
+    <div
+      class="winner-declaration"
+      style="
+        text-align: center;
+        margin-top: 20px;
+        color: #fff0d1;
+        font-size: 2rem;
+        font-style: italic;
+      "
+    >
+      <h2 id="winner" style="color: #3b3030"></h2>
+    </div>
+    <div class="battlearea">
+      <!-- First User Block -->
+      <div class="user">
+        <h1><%= username1 %></h1>
+        <% if (currentUserId === battleData.user_id &&
+        battleDetails.artist1_trackpath == null) { %>
+        <form
+          action="http://localhost:4000/api/uploadFile/<%= battleData.id %>/<%= battleData.user_id %>"
+          method="POST"
+          enctype="multipart/form-data"
+        >
+          <img src="/upload.png" alt="Upload File" />
+          <span>Upload Your files:</span>
+          <input type="file" name="myfile" required /> <br />
+          <button type="submit">Upload</button>
+        </form>
+        <% } else { %> <% if (battleDetails.artist1_trackpath) { %>
+        <p>File uploaded by <%= username1 %>:</p>
+        <% if (battleDetails.artist1_trackpath.endsWith('.mp3') ||
+        battleDetails.artist1_trackpath.endsWith('.wav')) { %>
+        <audio controls>
+          <source
+            src="<%= battleDetails.artist1_trackpath %>"
+            type="audio/mpeg"
+          />
+          Your browser does not support the audio tag.
+        </audio>
+        <% } else { %>
+        <a href="<%= battleDetails.artist1_trackpath %>" download>Download</a>
+        <% } %> <% } else { %>
+        <p><%= username1 %> has not uploaded a file yet.</p>
+        <% } %> <% } %>
+        <p>
+          Votes: <span id="votes-user1"><%= battleDetails.user1_votes %></span>
+        </p>
+        <form
+          class="vote-form"
+          data-user-id="<%= battleData.user_id %>"
+          data-battle-id="<%= battleData.id %>"
+        >
+          <button
+            type="button"
+            class="btnLogin-popup vote-button"
+            style="margin-left: 40px"
+          >
+            Vote
+          </button>
+        </form>
+      </div>
+
+      <!-- Second User Block -->
+      <div class="user">
+        <h1><%= username2 %></h1>
+        <% if (currentUserId === battleData.challenger_id &&
+        battleDetails.artist2_trackpath == null) { %>
+        <form
+          action="http://localhost:4000/api/uploadFile/<%= battleData.id %>/<%= battleData.challenger_id %>"
+          enctype="multipart/form-data"
+          method="POST"
+        >
+          <img src="/upload.png" alt="Upload File" />
+          <span>Upload Your files:</span>
+          <input type="file" name="myfile" required /> <br />
+          <button type="submit">Submit</button>
+        </form>
+        <% } else { %> <% if (battleDetails.artist2_trackpath) { %>
+        <p>File uploaded by <%= username2 %>:</p>
+        <% if (battleDetails.artist2_trackpath.endsWith('.mp3') ||
+        battleDetails.artist2_trackpath.endsWith('.wav')) { %>
+        <audio controls>
+          <source
+            src="<%= battleDetails.artist2_trackpath %>"
+            type="audio/mpeg"
+          />
+          Your browser does not support the audio tag.
+        </audio>
+        <% } else { %>
+        <a href="<%= battleDetails.artist2_trackpath %>" download>Download</a>
+        <% } %> <% } else { %>
+        <p><%= username2 %> has not uploaded a file yet.</p>
+        <% } %> <% } %>
+        <p>
+          Votes: <span id="votes-user2"><%= battleDetails.user2_votes %></span>
+        </p>
+        <form
+          class="vote-form"
+          data-user-id="<%= battleData.challenger_id %>"
+          data-battle-id="<%= battleData.id %>"
+        >
+          <button
+            type="button"
+            class="btnLogin-popup vote-button"
+            style="margin-left: 40px"
+          >
+            Vote
+          </button>
+        </form>
+      </div>
+    </div>
+    <script>
+      document.querySelectorAll(".vote-button").forEach((button) => {
+        button.addEventListener("click", async (e) => {
+          const userId = e.target.closest(".vote-form").dataset.userId;
+          const battleId = e.target.closest(".vote-form").dataset.battleId;
+
+          try {
+            const response = await fetch(`/arena/vote/${battleId}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ votedFor: userId }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              alert(
+                `Error: ${
+                  errorData.message ||
+                  "There was an issue processing your vote."
+                }`
+              );
+              return;
+            }
+
+            const result = await response.json();
+            if (result.success) {
+              const voteCountElement1 = document.getElementById("votes-user1");
+              const voteCountElement2 = document.getElementById("votes-user2");
+              voteCountElement1.textContent = result.votes[0];
+              voteCountElement2.textContent = result.votes[1];
+            } else {
+              alert("Vote not counted. Please try again.");
+            }
+          } catch (error) {
+            console.error("Error during the voting process:", error);
+            alert("An unexpected error occurred. Please try again later.");
+          }
+        });
+      });
+    </script>
+    <div id="countdown"></div>
+<div id="winner"></div>
+
+
+<script>
+  // Set the target start date and time
+  const startClock = new Date('<%= startClock %>');
+  const endTime = new Date(startClock.getTime() + 60 * 1000); // Add 60 seconds
+
+  console.log("Start time:", startClock);
+  console.log("Time after adding 60 seconds:", endTime);
+
+  const countdownElement = document.getElementById("countdown");
+  const alarmSound = document.getElementById("alarmSound");
+  const battleId = '<%= battleData.id %>';
+  const username1 = '<%= username1 %>';
+  const username2 = '<%= username2 %>';
+
+  // Timer interval
+  let timer = setInterval(showRemaining, 1000);
+
+  async function showRemaining() {
+    const now = new Date();
+    const distance = endTime - now;
+
+    console.log("Current time:", now);
+    console.log("Distance:", distance); // Check if this is negative or too small
+
+    if (distance <= 0) {
+      clearInterval(timer);  // Stop the timer
+      countdownElement.textContent = "Time's up!";
+      alarmSound.play();
+      await declareWinner();
+      return;
+    }
+
+ 
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    
+    countdownElement.textContent = 
+      (days ? days + "d " : "") + 
+      (hours ? hours + "h " : "") + 
+      (minutes < 10 ? "0" : "") + minutes + ":" +
+      (seconds < 10 ? "0" : "") + seconds;
+  }
+
+  async function declareWinner() {
+    const user1Votes = parseInt(document.getElementById("votes-user1")?.textContent || '0');
+    const user2Votes = parseInt(document.getElementById("votes-user2")?.textContent || '0');
+    const winnerElement = document.getElementById("winner");
+    let winnerUsername = "none";
+
+    // Determine the winner based on vote count
+    if (user1Votes > user2Votes) {
+      winnerUsername = username1;
+    } else if (user2Votes > user1Votes) {
+      winnerUsername = username2;
+    }
+
+    try {
+      // Send request to update battle status
+      const response = await fetch(`/arena/update-status/${battleId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: winnerUsername }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update battle status");
+      }
+
+      // Display winner or tie
+      if (user1Votes > user2Votes) {
+        winnerElement.textContent = `"${username1}" is the winner!`;
+      } else if (user1Votes < user2Votes) {
+        winnerElement.textContent = `"${username2}" is the winner!`;
+      } else {
+        winnerElement.textContent = "It's a tie!";
+      }
+    } catch (error) {
+      console.error("Error updating battle status:", error);
+      alert("An error occurred while updating the battle status. Please try again.");
+    }
+  }
+</script>
+
+
+    
+  </body>
+</html>

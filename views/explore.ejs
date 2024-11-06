@@ -1,0 +1,24 @@
+<%- include("header.ejs") %>
+
+<h2>All Uploaded Files</h2>
+<% if (allFiles && allFiles.length > 0) { %>
+  <ul>
+    <% allFiles.forEach(file => { %>
+      <li>
+        <!-- File download link -->
+        <a href="<%= file.file_path %>" download><%= file.file_name %></a>
+
+        <% if (file.file_name.endsWith('.mp3')) { %>
+          <audio controls>
+            <source src="<%= file.file_path %>" type="audio/mpeg">
+            Your browser does not support the audio tag.
+          </audio>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <p>No files available for exploration.</p>
+<% } %>
+</body>
+</html>
