@@ -157,9 +157,16 @@
       </div>
 
     </form>
+    
     <% if(locals.error){ %>
         <p style="color: red;"><%=error%></p>
     <%}%>
+    <div class="card-body">
+      <a class="btn btn-block" href="/auth/google" role="button">
+        <i class="fab fa-google"></i>
+        Sign Up with Google
+      </a>
+    </div>
   </div>
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>

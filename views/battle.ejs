@@ -233,10 +233,8 @@ h2 {
 </head>
 <body>
   <header>
-    <a href="back.html">
       <!-- back to where we were -->
-      <button class="btnLogin-popup">Back</button>
-    </a>
+   
   </header>
   <div class="create">
   <h1>Rap Battles</h1>
@@ -269,12 +267,13 @@ h2 {
       </div>
     </div>
   <% } else { %>
-    <p>No battle requests at the moment.</p>
+    <br/>
+    <p style="text-align: center; width: 100%;">No battle requests at the moment.</p>
   <% } %>
   <h2>Your Battles</h2>
   <% if (locals.yourBattles && yourBattles.length > 0) { %>
     <div id="battleDetails">
-      <h2>Battle Requests</h2>
+      
       <% yourBattles.forEach(battle => { %>
         <div class="battleRequest">
           <a href="/arena/<%= battle.id %>">

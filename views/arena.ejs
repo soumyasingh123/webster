@@ -391,92 +391,80 @@
 
 
 <script>
-  // Set the target start date and time
-  const startClock = new Date('<%= startClock %>');
-  const endTime = new Date(startClock.getTime() + 60 * 1000); // Add 60 seconds
-
-  console.log("Start time:", startClock);
-  console.log("Time after adding 60 seconds:", endTime);
-
   const countdownElement = document.getElementById("countdown");
   const alarmSound = document.getElementById("alarmSound");
-  const battleId = '<%= battleData.id %>';
+  let countdownValue = 60; // You can adjust this value based on your requirements
+  const battleId =  '<%= battleData.id %>';
   const username1 = '<%= username1 %>';
   const username2 = '<%= username2 %>';
 
-  // Timer interval
-  let timer = setInterval(showRemaining, 1000);
+  const countdown = setInterval(async () => {
+    if (countdownValue <= 0) {
+      clearInterval(countdown);
+      const stopTimer = document.getElementsByClassName("timer");
+      for (let i = 0; i < stopTimer.length; i++) {
+        stopTimer[i].style.display = "none"; // Set display to none
+      }
 
-  async function showRemaining() {
-    const now = new Date();
-    const distance = endTime - now;
-
-    console.log("Current time:", now);
-    console.log("Distance:", distance); // Check if this is negative or too small
-
-    if (distance <= 0) {
-      clearInterval(timer);  // Stop the timer
-      countdownElement.textContent = "Time's up!";
       alarmSound.play();
-      await declareWinner();
-      return;
-    }
+      countdownElement.textContent = "Time's up!";
+      countdownElement.classList.remove("normal");
+      countdownElement.classList.add("warning");
 
- 
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      // Declare the winner based on votes
+      const user1Votes = parseInt(
+        document.getElementById("votes-user1").textContent
+      );
+      const user2Votes = parseInt(
+        document.getElementById("votes-user2").textContent
+      );
+      const winnerElement = document.getElementById("winner");
+      let username = "none";
+      try {
+        // Send a request to update the battle status
+        if(user1Votes > user2Votes){
+          username = username1;
+        }
+        else if(user2Votes > user1Votes){
+          username = username2;
+        }
+        
+        const response = await fetch(`/arena/update-status/${battleId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body : JSON.stringify({"username" : username })
+        });
 
-    
-    countdownElement.textContent = 
-      (days ? days + "d " : "") + 
-      (hours ? hours + "h " : "") + 
-      (minutes < 10 ? "0" : "") + minutes + ":" +
-      (seconds < 10 ? "0" : "") + seconds;
-  }
+        if (!response.ok) {
+          throw new Error("Failed to update battle status");
+        }
 
-  async function declareWinner() {
-    const user1Votes = parseInt(document.getElementById("votes-user1")?.textContent || '0');
-    const user2Votes = parseInt(document.getElementById("votes-user2")?.textContent || '0');
-    const winnerElement = document.getElementById("winner");
-    let winnerUsername = "none";
-
-    // Determine the winner based on vote count
-    if (user1Votes > user2Votes) {
-      winnerUsername = username1;
-    } else if (user2Votes > user1Votes) {
-      winnerUsername = username2;
-    }
-
-    try {
-      // Send request to update battle status
-      const response = await fetch(`/arena/update-status/${battleId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: winnerUsername }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update battle status");
+        // Declare the winner
+        if (user1Votes > user2Votes) {
+          winnerElement.textContent = `"${username1}" is the winner!`;
+        } else if (user1Votes < user2Votes) {
+          winnerElement.textContent = `"${username2}" is the winner!`;
+        } else {
+          winnerElement.textContent = "It's a tie!";
+        }
+      } catch (error) {
+        console.error("Error updating battle status:", error);
+        alert(
+          "An error occurred while updating the battle status. Please try again."
+        );
       }
-
-      // Display winner or tie
-      if (user1Votes > user2Votes) {
-        winnerElement.textContent = `"${username1}" is the winner!`;
-      } else if (user1Votes < user2Votes) {
-        winnerElement.textContent = `"${username2}" is the winner!`;
-      } else {
-        winnerElement.textContent = "It's a tie!";
-      }
-    } catch (error) {
-      console.error("Error updating battle status:", error);
-      alert("An error occurred while updating the battle status. Please try again.");
+      return; // Exit after processing the end of the countdown
     }
-  }
+
+    countdownValue--;
+    const minutes = Math.floor(countdownValue / 60);
+    const seconds = countdownValue % 60;
+    countdownElement.textContent = `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  }, 1000);
 </script>
+
 
 
     
