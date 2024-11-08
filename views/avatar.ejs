@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>choose avatar</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            background-color: #FFF0D1;
+        }
+
+        .heading {
+            font-size: 3rem;
+            font-family: Tahoma;
+            color: #3B3030;
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .avatars {
+            width: 80%;
+            padding: 20px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            opacity: 0.8;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass {
+            width: 200px;
+            height: 200px;
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <h2 class="heading">Choose your Avatar &#128071;</h2>
+    <div class="avatars">
+        <div class="glass">
+            <img src="avatar1.png" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar2.png" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar3.jpg" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar4.jpg" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar5.png" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar6.jpg" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar7.png" alt="Avatar" class="avatar">
+        </div>
+        <div class="glass">
+            <img src="avatar8.png" alt="Avatar" class="avatar">
+        </div>
+    </div>
+
+    <script>
+        let selected=false;
+        const images = document.querySelectorAll('.avatar');
+        images.forEach(avatar => {
+            avatar.addEventListener('click', () => {
+                if(selected==true){
+                    alert("Can choose only one Avatar!")
+                }
+                else{
+                const chosenimage = avatar.src;
+                selected=true;
+                alert("Avatar updated successfully!");
+                console.log(chosenimage);
+                }
+            })
+        })
+    </script>
+
+</body>
+
+</html>
