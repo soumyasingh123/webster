@@ -13,22 +13,31 @@ import passport from "passport";
 import { Strategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import env from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 const app = express();
+const server = createServer(app);
 const port = 3000;
 const API_URL = "http://localhost:4000";
 const API2_URL = "http://localhost:5000";
 const saltRounds = 10;
+const io = new Server(server,{
+   cors:{
+     origin:"*",
+   }
+});
+
 env.config();
 
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
-    resave:false,
+    resave: false,
     saveUninitialized: true,
-    cookie :{
-      maxAge:1000*60*60*24
-    }
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24,
+    },
   })
 );
 
@@ -39,12 +48,27 @@ app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Listen for incoming connections
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  // Example event listener for room joining
+  socket.on("joinRoom", () => {
+    socket.join(roomId); // Add the socket to the room
+    console.log(`User joined room: ${roomId}`);
+  });
+});
 
 const db = new pg.Client({
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
   database: process.env.PG_DATABASE,
-  password:  process.env.PG_PASSWORD,
+  password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
 });
 
@@ -62,10 +86,12 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
-app.get("/auth/google",passport.authenticate("google",{
-  scope:["profile","email"],
-
-}));
+app.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
 
 app.get(
   "/auth/google/rapBattles",
@@ -79,15 +105,27 @@ app.post("/register", async (req, res) => {
 
   try {
     // Check if the email or username already exists
-    const checkEmail = await db.query("SELECT * FROM user_webster WHERE email = $1", [email]);
-    const checkUsername = await db.query("SELECT * FROM user_webster WHERE username = $1", [username]);
+    const checkEmail = await db.query(
+      "SELECT * FROM user_webster WHERE email = $1",
+      [email]
+    );
+    const checkUsername = await db.query(
+      "SELECT * FROM user_webster WHERE username = $1",
+      [username]
+    );
 
     if (checkEmail.rows.length > 0) {
-      return res.render("register", { error: "Email already exists. Try logging in." });
+      return res.render("register", {
+        error: "Email already exists. Try logging in.",
+      });
     } else if (checkUsername.rows.length > 0) {
-      return res.render("register", { error: "Username already exists. Try something else." });
+      return res.render("register", {
+        error: "Username already exists. Try something else.",
+      });
     } else if (password.length < 8) {
-      return res.render("register", { error: "Password should have at least 8 characters." });
+      return res.render("register", {
+        error: "Password should have at least 8 characters.",
+      });
     }
 
     // Hash the password
@@ -107,7 +145,9 @@ app.post("/register", async (req, res) => {
     req.login(userResult, (err) => {
       if (err) {
         console.error("Error logging in:", err);
-        return res.render("register", { error: "Login error after registration." });
+        return res.render("register", {
+          error: "Login error after registration.",
+        });
       }
       console.log("Registration successful, user logged in.");
       return res.redirect("/explore");
@@ -118,34 +158,73 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.post(
+  "/login",
+  passport.authenticate("local", {
+    successRedirect: "/explore",
+    failureRedirect: "/login",
+  })
+);
 
+app.get("/profile/avatar",(req,res)=>{
+         const userid = req.user.id;
+         res.render("avatar",{userid});
+});
 
-app.post("/login", passport.authenticate("local",{
-   successRedirect: "/explore",
-   failureRedirect: "/login",
-}));
+app.post('/profile/avatar/pic', async (req, res) => {
+  const userId = req.user ? req.user.id : null; // Ensure user ID is present
+  const file = req.body.path;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  if (!file) {
+    return res.status(400).json({ error: 'File path is required' });
+  }
+
+  try {
+    // Execute the query to update the user's avatar
+    await db.query("UPDATE user_webster SET avatar = $1 WHERE id = $2", [file, userId]);
+    
+    // Send a success response if no error occurs
+    res.json({ message: 'File uploaded successfully!' });
+  } catch (error) {
+    console.log("Error: ", error);
+    
+    // Send an error response with a 500 status code
+    res.status(500).json({ error: 'An error occurred while updating the avatar.' });
+  }
+});
+
 
 app.get("/explore", async (req, res) => {
-if(req.isAuthenticated()){
-  try {
-    const filesQuery = `
+  if (req.isAuthenticated()) {
+    try {
+      const filesQuery = `
           SELECT file_id, file_name, file_path, like_count, dislike_count, upload_date
           FROM files
           ORDER BY upload_date DESC
       `;
-    const filesResult = await db.query(filesQuery);
-    console.log(req.user.id);
-    res.render("explore", {
-      allFiles: filesResult.rows,
-      userId: req.user.id, // assuming you set userId in the session
-    });
-  } catch (error) {
-    console.error("Error retrieving files:", error);
-    res.status(500).json({ message: "Internal server error" });
+      const filesResult = await db.query(filesQuery);
+      console.log(req.user.id);
+      res.render("explore", {
+        allFiles: filesResult.rows,
+        userId: req.user.id, // assuming you set userId in the session
+      });
+    } catch (error) {
+      console.error("Error retrieving files:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  } else {
+    res.redirect("/login");
   }
-} else{
-  res.redirect("/login");
-}
+});
+app.get("/profile/",async(req,res)=>{
+  const userId = req.user.id;
+  const userDetailsresult = await db.query("SELECT * FROM user_webster WHERE id = $1",[userId]);
+  const userDetails = userDetailsresult.rows[0];
+  res.render("profile",{userDetails});
 });
 
 app.get("/uploadFile", (req, res) => {
@@ -156,10 +235,13 @@ app.get("/userFiles", async (req, res) => {
   const userId = req.user.id;
   if (!userId) {
     console.log("user id missing");
-    return res.redirect("/login");}
+    return res.redirect("/login");
+  }
 
   try {
-    const response = await axios.get(`${API_URL}/api/userFiles/${userId}`,{withCredentials:true});
+    const response = await axios.get(`${API_URL}/api/userFiles/${userId}`, {
+      withCredentials: true,
+    });
     const files = response.data?.files || []; // Fallback to empty array if files are undefined
     res.render("uploads", { files, userId });
   } catch (error) {
@@ -266,33 +348,37 @@ app.post("/battles/:battleId/accept", async (req, res) => {
 app.get("/arena/:id", async (req, res) => {
   const battleId = req.params.id;
   const currentUserId = req.user.id;
-  const { userId } = req.body;
+  console.log(currentUserId);
 
   try {
-    // Fetch data related to the battle
-    const battleData = await db.query(
-      "SELECT * FROM battle_messages WHERE id = $1",
+    // Fetch battle and user data in one go if possible
+    const battleDataResult = await db.query(
+      `
+      SELECT bm.*, 
+       uw1.username AS username1, 
+       uw2.username AS username2
+FROM battle_messages bm
+LEFT JOIN user_webster uw1 ON bm.user_id = uw1.id
+LEFT JOIN user_webster uw2 ON bm.challenger_id = uw2.id
+WHERE bm.id = $1;
+    `,
       [battleId]
     );
 
-    const username1result = await db.query(
-      "SELECT username FROM user_webster WHERE id = $1",
-      [battleData.rows[0].user_id]
-    );
-    const username2result = await db.query(
-      "SELECT username FROM user_webster WHERE id = $1",
-      [battleData.rows[0].challenger_id]
-    );
-    const username1 = username1result.rows[0].username;
-    const username2 = username2result.rows[0].username;
+    if (battleDataResult.rows.length === 0) {
+      throw new Error("Battle data not found");
+    }
 
-    // Check if the battle already exists in the battles table
+    const battleData = battleDataResult.rows[0];
+    const username1 = battleData.username1 || "Unknown User";
+    const username2 = battleData.username2 || "Unknown User";
+
+    // Check if battle exists and insert if not
     const existingBattleResult = await db.query(
       "SELECT * FROM battles WHERE battle_id = $1 AND username1 = $2 AND username2 = $3",
       [battleId, username1, username2]
     );
 
-    // If it doesn't exist, insert the new battle
     if (existingBattleResult.rows.length === 0) {
       await db.query(
         "INSERT INTO battles (username1, username2, battle_id) VALUES ($1, $2, $3)",
@@ -300,43 +386,34 @@ app.get("/arena/:id", async (req, res) => {
       );
     }
 
-    // Fetch battle details
-    const battleDetails = await db.query(
-      "SELECT * FROM battles WHERE battle_id = $1",
-      [battleId]
-    );
-    let startClock = 0;
-    let setClock = false;
-    if (
-      battleDetails.rows[0].artist1_trackpath != null &&
-      battleDetails.rows[0].artist2_trackpath != null
-    ) {
-      setClock = true;
-      const user1time = await db.query(
-        "SELECT upload_date FROM files WHERE file_path = $1",
-        [battleDetails.rows[0].artist1_trackpath]
-      );
-      const user2time = await db.query(
-        "SELECT upload_date FROM files WHERE file_path = $1",
-        [battleDetails.rows[0].artist2_trackpath]
-      );
-      const time1 = new Date(user1time.rows[0].upload_date);
-      const time2 = new Date(user2time.rows[0].upload_date);
-      startClock = time1 > time2 ? time1 : time2;
-      console.log(startClock);
+    // Fetch track upload times for both users, if available
+    if (battleData.artist1_trackpath && battleData.artist2_trackpath) {
+      const [user1time, user2time] = await Promise.all([
+        db.query("SELECT upload_date FROM files WHERE file_path = $1", [
+          battleData.artist1_trackpath,
+        ]),
+        db.query("SELECT upload_date FROM files WHERE file_path = $1", [
+          battleData.artist2_trackpath,
+        ]),
+      ]);
+
+      if (user1time.rows.length && user2time.rows.length) {
+        const time1 = new Date(user1time.rows[0].upload_date);
+        const time2 = new Date(user2time.rows[0].upload_date);
+        const startClock = (time1 > time2 ? time1 : time2).getTime();
+        console.log(startClock);
+        // Emit startTimer event
+        setTimeout(() => {
+          req.io.to(battleId).emit("startTimer", { startTime: startClock });
+          console.log(`startTimer event emitted to room ${battleId}`);
+        }, 1000);
+      }
     }
-
-    console.log(username1);
-
-    // Render the arena.ejs file and pass the battle data
+    console.log(battleData);
+    // Render the arena page with data
     res.render("arena", {
-      battleData: battleData.rows[0],
-      username1,
-      username2,
+      battleData,
       currentUserId,
-      setClock,
-      startClock,
-      battleDetails: battleDetails.rows[0],
     });
   } catch (error) {
     console.error("Error loading arena:", error);
@@ -352,14 +429,17 @@ app.post("/uploadBattleFile/:battle_id/:user_id", async (req, res) => {
   const battle_id = req.params.battle_id;
 
   try {
-    const response = await axios.post(`${API_URL}/api/uploadFile/${user_id}`, {
-      user_id,
-    },{withCredentials:true});
+    const response = await axios.post(
+      `${API_URL}/api/uploadFile/${user_id}`,
+      {
+        user_id,
+      },
+      { withCredentials: true }
+    );
   } catch (error) {
     console.error("Error uploading file:", error);
   }
 });
-
 
 app.post("/arena/vote/:battleId", async (req, res) => {
   const votedFor = req.body.votedFor; // The user ID being voted for
@@ -400,41 +480,31 @@ app.post("/arena/vote/:battleId", async (req, res) => {
     let user2Votes = 0;
 
     if (votedFor == user1) {
-      await db.query(
-        "UPDATE battles SET user1_votes = user1_votes + 1 WHERE battle_id = $1",
+      const resultvotes = await db.query(
+        "UPDATE battles SET user1_votes = user1_votes + 1 WHERE battle_id = $1 RETURNING *",
         [battleId]
       );
-      user1Votes++;
+      user1Votes = resultvotes.rows[0].user1_votes;
+      user2Votes = resultvotes.rows[0].user2_votes;
     } else if (votedFor == user2) {
-      await db.query(
-        "UPDATE battles SET user2_votes = user2_votes + 1 WHERE battle_id = $1",
+      const result2 = await db.query(
+        "UPDATE battles SET user2_votes = user2_votes + 1 WHERE battle_id = $1 RETURNING *",
         [battleId]
       );
-      user2Votes++;
+      user1Votes = result2.rows[0].user1_votes;
+      user2Votes = result2.rows[0].user2_votes;
     } else {
       // Handle the case where the votedFor is invalid
       return res.status(400).json({ error: "Invalid vote." });
     }
 
-    // Retrieve updated vote counts
-    const updatedCounts = await db.query(
-      "SELECT user1_votes, user2_votes FROM battles WHERE battle_id = $1",
-      [battleId]
-    );
-    user1Votes += updatedCounts.rows[0].user1_votes;
-    user2Votes += updatedCounts.rows[0].user2_votes;
-    console.log(user1Votes);
-    console.log(user2Votes);
     // Respond with the updated vote counts
-    const result = {
-      success: true,
-      votes: [user1Votes, user2Votes],
-    };
-    console.log(result);
-    res.json({
-      success: true,
-      votes: [user1Votes, user2Votes],
+    io.emit("voteUpdate", {
+      battleId,
+      votes1: user1Votes,
+      votes2: user2Votes,
     });
+    res.json({ message: "vote succesfully recorded", success: "true" });
   } catch (error) {
     console.error("Error recording vote:", error);
     res.status(500).json({ error: "Failed to record your vote." });
@@ -459,7 +529,8 @@ app.get("/battle/votes/:battleId", async (req, res) => {
   const { battleId } = req.params;
 
   try {
-    const battleDetails = await getBattleDetails(battleId); // Assume this retrieves the current vote counts
+    const battleDetailsresult = await db.query("SELECT * FROM battles WHERE battle_id = $1",[battleId]); // Assume this retrieves the current vote counts
+    battleDetails = battleDetailsresult.rows[0];
     res.json({
       user1_votes: battleDetails.user1_votes,
       user2_votes: battleDetails.user2_votes,
@@ -478,15 +549,17 @@ app.get("/logout", (req, res) => {
   });
 });
 
-
 passport.use(
-  new Strategy(async function verify(username,password,cb) {
-     try{
-      const result = await db.query("SELECT * FROM user_webster WHERE username = $1",[username]);
+  new Strategy(async function verify(username, password, cb) {
+    try {
+      const result = await db.query(
+        "SELECT * FROM user_webster WHERE username = $1",
+        [username]
+      );
       if (result.rows.length > 0) {
         const user = result.rows[0];
         const hashedPassword = user.password;
-  
+
         bcrypt.compare(password, hashedPassword, (err, result) => {
           if (err) {
             console.error("error comparing passswords : ", err);
@@ -495,21 +568,19 @@ passport.use(
             if (result) {
               //passed password check
               console.log(user);
-              return cb(null,user);
-              
+              return cb(null, user);
             } else {
               //didn't pass password check
-              return cb(null,false);
+              return cb(null, false);
             }
           }
         });
-       
       } else {
-         return cb("user not found");
+        return cb("user not found");
       }
-     }catch(err){
-       console.log(err);
-     }
+    } catch (err) {
+      console.log(err);
+    }
   })
 );
 
@@ -525,13 +596,14 @@ passport.use(
     async (accessToken, refreshToken, profile, cb) => {
       console.log(profile);
       try {
-        const result = await db.query("SELECT * FROM user_webster WHERE email = $1", [
-          profile.email,
-        ]);
+        const result = await db.query(
+          "SELECT * FROM user_webster WHERE email = $1",
+          [profile.email]
+        );
         if (result.rows.length === 0) {
           const newUser = await db.query(
             "INSERT INTO user_webster (username,email, password) VALUES ($1, $2,$3) RETURNING *",
-            [profile.given_name , profile.email, "google"]
+            [profile.given_name, profile.email, "google"]
           );
           return cb(null, newUser.rows[0]);
         } else {
@@ -551,19 +623,19 @@ passport.serializeUser((user, done) => {
 // Deserialize the user (fetch the user object from the database based on the ID stored in the session)
 passport.deserializeUser(async (id, done) => {
   try {
-    const result = await db.query('SELECT * FROM user_webster WHERE id = $1', [id]);
+    const result = await db.query("SELECT * FROM user_webster WHERE id = $1", [
+      id,
+    ]);
     if (result.rows.length > 0) {
       done(null, result.rows[0]); // Pass the full user object
     } else {
-      done(new Error('User not found'));
+      done(new Error("User not found"));
     }
   } catch (err) {
     done(err);
   }
 });
 
-
-
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

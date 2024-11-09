@@ -155,27 +155,21 @@
     <header>
         <h2 class="logo">Logo</h2>
         <nav class="navigation">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <button class="back_button" onclick="window.history.back()">Back</button>
+            <a href="/explore">Home</a>
         </nav>
     </header>
 
     <div class="row">
         <div class="image_port">
-            <img id="profilePhoto" src="userimage.png" alt="Profile Photo">
-            <a href="avatar.html"><button class="back_button">Change Avatar</button></a>
-            <a href="portfolio.html"><button class="back_button">My Portfolio</button></a>
+            <img id="profilePhoto" src=<%= userDetails.avatar %> alt="Profile Photo">
+            <a href="/profile/avatar"><button class="back_button">Change Avatar</button></a>
+            <a href="portfolio.ejs"><button class="back_button">My Portfolio</button></a>       
         </div>
         <div class="form_box">
-            <form>
+           <form>
                 <div class="form-group">
-                    <label for="NameInput">UserName</label>
-                    <input type="text" id="NameInput" placeholder="Name" required>
-                </div>
-                <div class="form-group">
-                    <label for="cityInput">City</label>
-                    <input type="text" id="CityInput" placeholder="Enter your city">
+                <label for="Username">Username</label>
+                <input type="text" id="NameInput" readonly placeholder="<%= userDetails.username %>">
                 </div>
                 <div class="form-group">
                     <label for="battleInput">Battles</label>
@@ -183,13 +177,11 @@
                 </div>
                 <div class="form-group">
                     <label for="scoresInput">Scores</label>
-                    <input type="number" id="scoresInput" placeholder="0" readonly>
+                    <input type="number" id="scoresInput" placeholder="<%= userDetails.points %>" readonly>
                 </div>
-                <button type="submit" class="form-button">Edit</button>
             </form>
         </div>
     </div>
-    <script src="profile.js"></script>
 </body>
 
 </html>

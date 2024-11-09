@@ -223,15 +223,13 @@
       </nav>
     </header>
     <div class="timer">
-      <% if (locals.setClock && setClock == true) { %>
       <h1>Battle Countdown Timer</h1>
       <div id="countdown" class="normal">01:00</div>
       <audio
         id="alarmSound"
-        src="clock/alarm-clock-90867.mp3"
+        src="/alarm-clock-90867.mp3"
         preload="auto"
       ></audio>
-      <% } %>
     </div>
     <div
       class="winner-declaration"
@@ -248,9 +246,9 @@
     <div class="battlearea">
       <!-- First User Block -->
       <div class="user">
-        <h1><%= username1 %></h1>
+        <h1><%=username1 %></h1>
         <% if (currentUserId === battleData.user_id &&
-        battleDetails.artist1_trackpath == null) { %>
+        battleData.artist1_trackpath === null) { %>
         <form
           action="http://localhost:4000/api/uploadFile/<%= battleData.id %>/<%= battleData.user_id %>"
           method="POST"
@@ -261,24 +259,21 @@
           <input type="file" name="myfile" required /> <br />
           <button type="submit">Upload</button>
         </form>
-        <% } else { %> <% if (battleDetails.artist1_trackpath) { %>
-        <p>File uploaded by <%= username1 %>:</p>
-        <% if (battleDetails.artist1_trackpath.endsWith('.mp3') ||
-        battleDetails.artist1_trackpath.endsWith('.wav')) { %>
+        <% } else { %> <% if (battleData.artist1_trackpath) { %>
+        <p>File uploaded by <%=username1 %>:</p>
+        <% if (battleData.artist1_trackpath.endsWith('.mp3') ||
+        battleData.artist1_trackpath.endsWith('.wav')) { %>
         <audio controls>
-          <source
-            src="<%= battleDetails.artist1_trackpath %>"
-            type="audio/mpeg"
-          />
+          <source src="<%= battleData.artist1_trackpath %>" type="audio/mpeg" />
           Your browser does not support the audio tag.
         </audio>
         <% } else { %>
-        <a href="<%= battleDetails.artist1_trackpath %>" download>Download</a>
+        <a href="<%= battleData.artist1_trackpath %>" download>Download</a>
         <% } %> <% } else { %>
         <p><%= username1 %> has not uploaded a file yet.</p>
         <% } %> <% } %>
         <p>
-          Votes: <span id="votes-user1"><%= battleDetails.user1_votes %></span>
+          Votes: <span id="votes-user1"><%= battleData.user1_votes %></span>
         </p>
         <form
           class="vote-form"
@@ -297,9 +292,9 @@
 
       <!-- Second User Block -->
       <div class="user">
-        <h1><%= username2 %></h1>
+        <h1><%=username2%></h1>
         <% if (currentUserId === battleData.challenger_id &&
-        battleDetails.artist2_trackpath == null) { %>
+        battleData.artist2_trackpath === null) { %>
         <form
           action="http://localhost:4000/api/uploadFile/<%= battleData.id %>/<%= battleData.challenger_id %>"
           enctype="multipart/form-data"
@@ -310,24 +305,21 @@
           <input type="file" name="myfile" required /> <br />
           <button type="submit">Submit</button>
         </form>
-        <% } else { %> <% if (battleDetails.artist2_trackpath) { %>
+        <% } else { %> <% if (battleData.artist2_trackpath) { %>
         <p>File uploaded by <%= username2 %>:</p>
-        <% if (battleDetails.artist2_trackpath.endsWith('.mp3') ||
-        battleDetails.artist2_trackpath.endsWith('.wav')) { %>
+        <% if (battleData.artist2_trackpath.endsWith('.mp3') ||
+        battleData.artist2_trackpath.endsWith('.wav')) { %>
         <audio controls>
-          <source
-            src="<%= battleDetails.artist2_trackpath %>"
-            type="audio/mpeg"
-          />
+          <source src="<%= battleData.artist2_trackpath %>" type="audio/mpeg" />
           Your browser does not support the audio tag.
         </audio>
         <% } else { %>
-        <a href="<%= battleDetails.artist2_trackpath %>" download>Download</a>
+        <a href="<%= battleData.artist2_trackpath %>" download>Download</a>
         <% } %> <% } else { %>
         <p><%= username2 %> has not uploaded a file yet.</p>
         <% } %> <% } %>
         <p>
-          Votes: <span id="votes-user2"><%= battleDetails.user2_votes %></span>
+          Votes: <span id="votes-user2"><%= battleData.user2_votes %></span>
         </p>
         <form
           class="vote-form"
@@ -381,92 +373,68 @@
             }
           } catch (error) {
             console.error("Error during the voting process:", error);
-            alert("An unexpected error occurred. Please try again later.");
+            alert(error);
           }
         });
       });
     </script>
-    <div id="countdown"></div>
-<div id="winner"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io('http://127.0.0.1:3000');
+      socket.on("connect",()=>{
+         console.log("connected");
+      })
+      const countdownElement = document.getElementById("countdown");
+      const alarmSound = document.getElementById("alarmSound");
+      const battleId = '<%= battleData.id %>';
+      const username1 = '<%= username1 %>';
+      const username2 = '<%= username2 %>';
 
+      let countdownValue;
 
-<script>
-  const countdownElement = document.getElementById("countdown");
-  const alarmSound = document.getElementById("alarmSound");
-  let countdownValue = 60; // You can adjust this value based on your requirements
-  const battleId =  '<%= battleData.id %>';
-  const username1 = '<%= username1 %>';
-  const username2 = '<%= username2 %>';
+      // Join the room for this battle ID
+     
 
-  const countdown = setInterval(async () => {
-    if (countdownValue <= 0) {
-      clearInterval(countdown);
-      const stopTimer = document.getElementsByClassName("timer");
-      for (let i = 0; i < stopTimer.length; i++) {
-        stopTimer[i].style.display = "none"; // Set display to none
-      }
+      // Listen for "startTimer" event
+      socket.on("startTimer", ({ startTime }) => {
+        console.log(startTime);
+        const endTime = startTime+60000; // End time 60 seconds after start
 
-      alarmSound.play();
-      countdownElement.textContent = "Time's up!";
-      countdownElement.classList.remove("normal");
-      countdownElement.classList.add("warning");
+        const countdown = setInterval(() => {
+          const currentTime = Date.now();
+          
+          countdownValue = Math.floor((endTime - currentTime) / 1000);
+         
+          if (countdownValue <= 0) {
+            clearInterval(countdown);
 
-      // Declare the winner based on votes
-      const user1Votes = parseInt(
-        document.getElementById("votes-user1").textContent
+            // Stop and display "Time's up"
+            countdownElement.textContent = "Time's up!";
+            alarmSound.play();
+            // Add logic for when time ends (e.g., determining winner)
+
+            return;
+          }
+
+          // Display minutes and seconds
+          const minutes = Math.floor(countdownValue / 60);
+          const seconds = countdownValue % 60;
+          countdownElement.textContent = `${
+            minutes < 10 ? "0" : ""
+          }${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+        }, 1000);
+      });
+
+      // Listen for vote updates
+      socket.on(
+        "voteUpdate",
+        ({ battleId: updatedBattleId, votes1, votes2 }) => {
+          if (updatedBattleId === battleId) {
+            document.getElementById("votes-user1").textContent = votes1;
+            document.getElementById("votes-user2").textContent = votes2;
+          }
+        }
       );
-      const user2Votes = parseInt(
-        document.getElementById("votes-user2").textContent
-      );
-      const winnerElement = document.getElementById("winner");
-      let username = "none";
-      try {
-        // Send a request to update the battle status
-        if(user1Votes > user2Votes){
-          username = username1;
-        }
-        else if(user2Votes > user1Votes){
-          username = username2;
-        }
-        
-        const response = await fetch(`/arena/update-status/${battleId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body : JSON.stringify({"username" : username })
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to update battle status");
-        }
-
-        // Declare the winner
-        if (user1Votes > user2Votes) {
-          winnerElement.textContent = `"${username1}" is the winner!`;
-        } else if (user1Votes < user2Votes) {
-          winnerElement.textContent = `"${username2}" is the winner!`;
-        } else {
-          winnerElement.textContent = "It's a tie!";
-        }
-      } catch (error) {
-        console.error("Error updating battle status:", error);
-        alert(
-          "An error occurred while updating the battle status. Please try again."
-        );
-      }
-      return; // Exit after processing the end of the countdown
-    }
-
-    countdownValue--;
-    const minutes = Math.floor(countdownValue / 60);
-    const seconds = countdownValue % 60;
-    countdownElement.textContent = `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-  }, 1000);
-</script>
-
-
-
-    
+    </script>
   </body>
 </html>
