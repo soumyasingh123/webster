@@ -549,6 +549,10 @@ app.get("/logout", (req, res) => {
   });
 });
 
+app.get("/stream",(req,res)=>{
+    res.render("stream");
+});
+
 passport.use(
   new Strategy(async function verify(username, password, cb) {
     try {
