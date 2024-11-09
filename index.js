@@ -375,8 +375,8 @@ WHERE bm.id = $1;
 
     // Check if battle exists and insert if not
     const existingBattleResult = await db.query(
-      "SELECT * FROM battles WHERE battle_id = $1 AND username1 = $2 AND username2 = $3",
-      [battleId, username1, username2]
+      "SELECT * FROM battles WHERE battle_id = $1",
+      [battleId]
     );
 
     if (existingBattleResult.rows.length === 0) {
@@ -385,15 +385,16 @@ WHERE bm.id = $1;
         [username1, username2, battleId]
       );
     }
-
+      const battleDetailsresult = await db.query("SELECT * FROM battles WHERE battle_id = $1",[battleId]);
+      const battleDetails = battleDetailsresult.rows[0];
     // Fetch track upload times for both users, if available
-    if (battleData.artist1_trackpath && battleData.artist2_trackpath) {
+    if (battleDetails.artist1_trackpath && battleDetails.artist2_trackpath) {
       const [user1time, user2time] = await Promise.all([
         db.query("SELECT upload_date FROM files WHERE file_path = $1", [
-          battleData.artist1_trackpath,
+          battleDetails.artist1_trackpath,
         ]),
         db.query("SELECT upload_date FROM files WHERE file_path = $1", [
-          battleData.artist2_trackpath,
+          battleDetails.artist2_trackpath,
         ]),
       ]);
 
@@ -403,16 +404,13 @@ WHERE bm.id = $1;
         const startClock = (time1 > time2 ? time1 : time2).getTime();
         console.log(startClock);
         // Emit startTimer event
-        setTimeout(() => {
-          req.io.to(battleId).emit("startTimer", { startTime: startClock });
-          console.log(`startTimer event emitted to room ${battleId}`);
-        }, 1000);
       }
     }
     console.log(battleData);
     // Render the arena page with data
     res.render("arena", {
       battleData,
+      battleDetails,
       currentUserId,
     });
   } catch (error) {
