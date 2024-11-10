@@ -355,13 +355,13 @@ app.get("/arena/:id", async (req, res) => {
     const battleDataResult = await db.query(
       `
       SELECT bm.*, 
-       uw1.username AS username1, 
-       uw2.username AS username2
-FROM battle_messages bm
-LEFT JOIN user_webster uw1 ON bm.user_id = uw1.id
-LEFT JOIN user_webster uw2 ON bm.challenger_id = uw2.id
-WHERE bm.id = $1;
-    `,
+        uw1.username AS username1, 
+        uw2.username AS username2
+      FROM battle_messages bm
+      LEFT JOIN user_webster uw1 ON bm.user_id = uw1.id
+      LEFT JOIN user_webster uw2 ON bm.challenger_id = uw2.id
+      WHERE bm.id = $1;
+      `,
       [battleId]
     );
 
@@ -385,8 +385,14 @@ WHERE bm.id = $1;
         [username1, username2, battleId]
       );
     }
-      const battleDetailsresult = await db.query("SELECT * FROM battles WHERE battle_id = $1",[battleId]);
-      const battleDetails = battleDetailsresult.rows[0];
+
+    const battleDetailsResult = await db.query("SELECT * FROM battles WHERE battle_id = $1", [battleId]);
+    const battleDetails = battleDetailsResult.rows[0];
+
+    // Initialize variables
+    let startClock = null;
+    let setClock = false;
+
     // Fetch track upload times for both users, if available
     if (battleDetails.artist1_trackpath && battleDetails.artist2_trackpath) {
       const [user1time, user2time] = await Promise.all([
@@ -401,22 +407,35 @@ WHERE bm.id = $1;
       if (user1time.rows.length && user2time.rows.length) {
         const time1 = new Date(user1time.rows[0].upload_date);
         const time2 = new Date(user2time.rows[0].upload_date);
-        const startClock = (time1 > time2 ? time1 : time2).getTime();
-        console.log(startClock);
-        // Emit startTimer event
+        
+        // Use the later of the two times
+        startClock = new Date(Math.max(time1.getTime(), time2.getTime()));
+        
+        // Add one minute to the startClock time
+        startClock.setMinutes(startClock.getMinutes() + 1);
+        
+        setClock = true;
+        console.log("Start clock time:", startClock);
       }
     }
-    console.log(battleData);
+
+    console.log("Battle data:", battleData);
+
     // Render the arena page with data
     res.render("arena", {
       battleData,
       battleDetails,
       currentUserId,
+      startClock,
+      setClock,
     });
   } catch (error) {
     console.error("Error loading arena:", error);
     res.render("arena", {
       battleData: null,
+      battleDetails: null,
+      startClock:null,
+      setClock:null,
       error: "Failed to load the arena.",
     });
   }
