@@ -113,8 +113,12 @@
 
 <body>
   <header>
-    <h2 class="logo">MUSIC</h2>
+    <h2 class="logo">RapClash</h2>
     <nav>
+      <form  action="/artists" method="GET" style="display: inline;">
+        <button class="btnLogin-popup">Artists</button>
+      </form>
+      
       <form action="/profile" method="GET" style="display: inline;">
         <button class="btnLogin-popup">Profile</button>
       </form>
@@ -162,6 +166,9 @@
   <% } else { %>
     <p>No files available for exploration.</p>
     <% } %>
+
+     
+    
       </body>
 
 </html>

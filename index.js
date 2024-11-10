@@ -570,6 +570,14 @@ app.get("/stream",(req,res)=>{
     res.render("stream");
 });
 
+app.get("/artists", async (req, res) => {
+ 
+    const artistsResult = await db.query("SELECT * FROM user_webster");
+    const artists = artistsResult.rows;
+    console.log("Artists data retrieved:", artists);
+    res.render("artist", { artists });
+ 
+});
 passport.use(
   new Strategy(async function verify(username, password, cb) {
     try {
